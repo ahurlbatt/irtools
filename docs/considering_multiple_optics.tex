@@ -1,0 +1,114 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage{fullpage}
+\usepackage{graphicx}
+\usepackage{siunitx}
+\usepackage{amsmath}
+\usepackage{bm}
+\usepackage[hidelinks]{hyperref}
+\usepackage[noabbrev, capitalise]{cleveref}
+
+\title{Consideration of multiple (infrared) optical components between a camera and the target object}
+
+\author{Andrew Hurlbatt}
+
+\date{\today}
+
+\renewcommand{\abstractname}{\vspace{-\baselineskip}}
+
+\begin{document}
+	
+	\maketitle
+	
+	\begin{abstract}
+		In making infrared measurements, it is usually the case that objects, including air, exist between the camera and the target that affect the infrared radiation between the two. In addition, all objects reflect some amount of radiation from the environment. A method is detailed here of using summary properties of the objects involved to estimate the actual radiance emitted by the target. Self-emission, transmittances, and reflectances of all objects are considered, also allowing for reflections between objects.
+	\end{abstract}
+
+\section*{The System}
+
+When using infrared imaging to measure object temperatures, there are often objects along the imaging path that may alter the radiation through absorption, reflection, or addition of their own emission. These should all be taken into account when using a measured radiance to estimate that of a target. In this work, the properties of each object are assumed to be single values, and should therefore be calculated with the spectral response of the detector included. 
+
+An example system is shown in \cref{fig:scheme}, indicating that each object $ n $ out of $ N $ objects can have its own self-emission $ M_n $, transmittance $ \tau_n $, and reflectance $ \rho_n $. Also defined are the emittance $ \epsilon_T $ and self-emission $ M_T $ of the target, self-emission of the background around the target $ M_B $, the emission measured by the camera $ M_M $, and $ F_n $ and $ B_n $, being the forward and backward travelling radiation, respectively, between objects $ n $ and $ n+1 $. The self-emission of each object, with the exception of the target, should already have the effect of any reflected background taken into account.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=\textwidth]{./infroptics_scheme.pdf}
+	\caption{An example system with a window between the camera and the target, showing the atmosphere between each object should also be considered.}
+	\label{fig:scheme}
+\end{figure}
+
+From this arrangement, one can begin to define the quantities $ F_n $ and $ B_n $ in a recursive manner based on the properties of the objects. The quantity $ F_{n-1} $ must be the result of the interaction of object $ n $ with $ B_{n-1} $ and $ F_{n} $, leading to \cref{eq:Fn-1,eq:Fn}.
+
+\begin{align}
+	F_{n-1} &= \rho_n B_{n-1} + \tau_n F_n + M_n \label{eq:Fn-1} \\
+	F_n &= \frac{F_{n-1} - \rho_n B_{n-1} - M_n}{\tau_n}\label{eq:Fn}
+\end{align}
+
+Similarly, $ B_n $ also results from the same interaction, but in the other direction, as given in \cref{eq:Bn}.
+
+\begin{equation}\label{eq:Bn}
+	\begin{split}
+		B_n &= \rho_n F_n + \tau_n B_{n-1} + M_n \\
+		&= \rho_n \frac{F_{n-1} - \rho_n B_{n-1} - M_n}{\tau_n} + \tau_n B_{n-1} + M_n \\
+		&= \frac{\rho_n}{\tau_n} F_{n-1} + \left(\tau_n - \frac{\rho_n^2}{\tau_n}\right) B_{n-1} + \left(1 - \frac{\rho_n}{\tau_n}\right) M_n
+	\end{split}
+\end{equation}
+
+The pair of coupled recursive equations \cref{eq:Fn,eq:Bn} are linear in $ F_{n-1} $ and $ B_{n-1} $, and can be turned into a single recursive matrix equation, \cref{eq:mat}, by defining the matrices that follow.
+
+\begin{align*}
+	\bm{X}_n &=
+	\begin{bmatrix}
+		F_n \\ B_n
+	\end{bmatrix}
+	&
+	\bm{A}_n &=
+	\begin{bmatrix}
+		\frac{1}{\tau_n} & -\frac{\rho_n}{\tau_n} \\
+		\frac{\rho_n}{\tau_n} & \tau_n-\frac{\rho_n^2}{\tau_n} \\
+	\end{bmatrix}
+	&
+	\bm{b}_n &= 
+	\begin{bmatrix}
+		-\frac{M_n}{\tau_n}\\[4pt]
+		\left(1 - \frac{\rho_n}{\tau_n}\right) M_n
+	\end{bmatrix}
+\end{align*}
+
+\begin{equation}\label{eq:mat}
+	\bm{X}_{n} = \bm{A}_n \bm{X}_{n-1} + \bm{b}_n
+\end{equation}
+
+With the relatively light assumption that $ F_1 = M_M $ and that $ B_1 = 0 $ (i.e. negligible radiation is travelling from the camera back toward the target), $ \bm{X}_1 = \left[ M_M \enspace 0\right]^T$, and the system can be solved iteratively if the properties of all objects (apart from the target) are known.
+
+To avoid iterative solutions, the recursion can be unravelled into a single formula, given in \cref{eq:full_matrix}. In this and following expressions, ``Big-Pi'' notation is used to mean matrix multiplication, with subsequent terms being ordered left to right.
+
+\begin{equation}\label{eq:full_matrix}
+	\bm{X}_n = \left(\prod_{i=1}^n \bm{A}_{n-i}\right) \bm{X}_0 + \sum_{i=0}^{n-2} \left( \prod_{j=1}^{n-i-1} \bm{A}_{n-j} \right) \bm{b}_i + \bm{b}_n
+\end{equation}
+
+By isolating the two constant terms can be taken out of the expression and evaluated individually to give a single, non-recursive, expression for $ \bm{X}_N $ in \cref{eq:X_N}, from which the value of $ F_N $ can be extracted.
+
+\begin{align*}
+	\bm{D}_n &= \left(\prod_{i=1}^n \bm{A}_{n-i}\right) &
+	\bm{C}_n &= \sum_{i=0}^{n-2} \left( \prod_{j=1}^{n-i-1} \bm{A}_{n-j} \right) \bm{b}_i + \bm{b}_n
+\end{align*}
+
+\begin{equation}\label{eq:X_N}
+\bm{X}_{N} = \bm{D}_N \bm{X}_0 + \bm{C}_N
+\end{equation}
+
+The value of $ F_N $ does not immediately give us the estimated object radiance however, as it is also reflecting some radiance from the background. The quantity $ M_T $ is the radiance after correcting for this, and is given in \cref{eq:M_T}.
+
+\begin{equation}\label{eq:M_T}
+	M_T = \frac{F_N - \left(1 - \epsilon_T\right) M_B}{\epsilon_T}
+\end{equation}
+
+By extracting $ F_N $ as the first element of $ \bm{X}_N $ and applying the correction in \cref{eq:M_T}, one arrives at a linear relationship between the measured radiance $ M_M $ and the estimated radiance of the target object $ M_T $, with coefficients that are fully determined by the properties of the $ N $ objects and the radiance of the background. This is given in \cref{eq:M_T_M_M}, where $ d_{11} $ and $ c_{11} $ are the first elements of $ \bm{D}_N $ and $ \bm{C}_N $ respectively.
+
+\begin{equation}\label{eq:M_T_M_M}
+	M_T = \frac{d_{11}}{\epsilon_T} M_M + \frac{c_{11} - \left(1 - \epsilon_T\right) M_B}{\epsilon_T}
+\end{equation}
+
+The coefficients of the linear expression in \cref{eq:M_T_M_M} are independent of the measured radiance, and therefore only need to be calculated once for each system, which can improve efficiency.
+
+\end{document}
