@@ -23,11 +23,9 @@
 		In making infrared measurements, it is usually the case that objects, including air, exist between the camera and the target that affect the infrared radiation between the two. In addition, all objects reflect some amount of radiation from the environment. A method is detailed here of using summary properties of the objects involved to estimate the actual radiance emitted by the target. Self-emission, transmittances, and reflectances of all objects are considered, also allowing for reflections between objects.
 	\end{abstract}
 
-\section*{The System}
-
 When using infrared imaging to measure object temperatures, there are often objects along the imaging path that may alter the radiation through absorption, reflection, or addition of their own emission. These should all be taken into account when using a measured radiance to estimate that of a target. In this work, the properties of each object are assumed to be single values, and should therefore be calculated with the spectral response of the detector included. 
 
-An example system is shown in \cref{fig:scheme}, indicating that each object $ n $ out of $ N $ objects can have its own radiance $ M_n $, emittance $ \epsilon_n $, transmittance $ \tau_n $, specular reflectance $ \rho_n $, and diffuse reflectance $ \sigma_n $. Also defined are the properties of the target (with subscribt $ T $), radiance of the background around the system $ M_B $, the emission measured by the camera $ M_M $, and $ F_n $ and $ B_n $, being the forward and backward travelling radiation, respectively, between objects $ n $ and $ n+1 $.
+An example system is shown in \cref{fig:scheme}, indicating that each object $ n $ out of $ N $ objects can have its own radiance $ M_n $, emittance $ \epsilon_n $, transmittance $ \tau_n $, specular reflectance $ \rho_n $, and diffuse reflectance $ \sigma_n $. Object radiances are generally taken to be that of a black body at the same temperature, as wavelength dependant emittances are seldom known. Also defined are the properties of the target (with subscribt $ T $), radiance of the background around the system $ M_B $, the emission measured by the camera $ M_M $, and $ F_n $ and $ B_n $, being the forward and backward travelling radiation, respectively, between objects $ n $ and $ n+1 $.
 
 \begin{figure}
 	\centering
@@ -40,7 +38,7 @@ From this arrangement, one can begin to define the quantities $ F_n $ and $ B_n 
 
 \begin{align}
 	F_{n-1} &= \rho_n B_{n-1} + \tau_n F_n + \epsilon_n M_n + \sigma_n M_B \label{eq:Fn-1} \\
-	F_n &= \frac{F_{n-1} - \rho_n B_{n-1} - \epsilon_n M_n + \sigma_n M_B}{\tau_n}\label{eq:Fn}
+	F_n &= \frac{F_{n-1} - \rho_n B_{n-1} - \epsilon_n M_n - \sigma_n M_B}{\tau_n}\label{eq:Fn}
 \end{align}
 
 Similarly, $ B_n $ also results from the same interaction, but in the other direction, as given in \cref{eq:Bn}.
@@ -48,7 +46,7 @@ Similarly, $ B_n $ also results from the same interaction, but in the other dire
 \begin{equation}\label{eq:Bn}
 	\begin{split}
 		B_n &= \rho_n F_n + \tau_n B_{n-1} + \epsilon_n M_n + \sigma_n M_B \\
-		&= \rho_n \frac{F_{n-1} - \rho_n B_{n-1} - \epsilon_n M_n - \sigma_n M_B}{\tau_n} + \tau_n B_{n-1} + M_n \\
+		&= \rho_n \frac{F_{n-1} - \rho_n B_{n-1} - \epsilon_n M_n - \sigma_n M_B}{\tau_n} + \tau_n B_{n-1} + \epsilon_n M_n + \sigma_n M_B \\
 		&= \frac{\rho_n}{\tau_n} F_{n-1} + \left(\tau_n - \frac{\rho_n^2}{\tau_n}\right) B_{n-1} + \left(1 - \frac{\rho_n}{\tau_n}\right) \left(\epsilon_n M_n + \sigma_n M_B\right)
 	\end{split}
 \end{equation}
@@ -86,7 +84,7 @@ To avoid iterative solutions, the recursion can be unravelled into a single form
 	\bm{X}_n = \left(\prod_{i=1}^n \bm{A}_{n-i}\right) \bm{X}_0 + \sum_{i=0}^{n-2} \left( \prod_{j=1}^{n-i-1} \bm{A}_{n-j} \right) \bm{b}_i + \bm{b}_n
 \end{equation}
 
-By isolating the two constant terms can be taken out of the expression and evaluated individually to give a single, non-recursive, expression for $ \bm{X}_N $ in \cref{eq:X_N}, from which the value of $ F_N $ can be extracted.
+By isolating the two constant terms, they can be taken out of the expression and evaluated individually to give a single, non-recursive, expression for $ \bm{X}_N $ in \cref{eq:X_N}, from which the value of $ F_N $ can be extracted.
 
 \begin{align*}
 	\bm{D}_n &= \prod_{i=1}^n \bm{A}_{n-i} &
@@ -97,7 +95,7 @@ By isolating the two constant terms can be taken out of the expression and evalu
 \bm{X}_{N} = \bm{D}_N \bm{X}_0 + \bm{C}_N
 \end{equation}
 
-The value of $ F_N $ does not immediately give us the estimated object radiance however, as it is also reflecting some radiance from the background. The quantity $ M_T $ is the radiance after correcting for this, and is given in \cref{eq:M_T}.
+The value of $ F_N $ does not immediately give us the estimated object radiance however, as it is also reflecting some radiance from the background and from $ B_N $. The quantity $ M_T $ is the radiance after correcting for this, and is given in \cref{eq:M_T}.
 
 \begin{align}
 	M_T &= \frac{F_N - \sigma_T M_B - \rho_T B_N}{\epsilon_T} \nonumber\\
@@ -115,10 +113,10 @@ l &= \bm{P}_T \bm{C}_N - \frac{\sigma_T}{\epsilon_T} M_B
 	M_T = \bm{K} \bm{X}_0 + l
 \end{equation}
 
-By collecting terms into \cref{eq:K}, and extracting $ M_M $ as the first element of $ \bm{X}_0 $, one arrives at a linear relationship between the measured radiance $ M_M $ and the estimated radiance of the target object $ M_T $, with coefficients that are fully determined by the properties of the $ N $ objects and the radiance of the background. This is given in \cref{eq:M_T_M_M}, where $ k_{11} $ is the first elements of $ \bm{K} $.
+By collecting terms into \cref{eq:K}, and extracting $ M_M $ as the first element of $ \bm{X}_0 $, one arrives at a linear relationship between the measured radiance $ M_M $ and the estimated radiance of the target object $ M_T $, with coefficients that are fully determined by the properties of the $ N $ objects and the radiance of the background. This is given in \cref{eq:M_T_M_M}, where $ k_{1} $ is the first element of $ \bm{K} $.
 
 \begin{equation}\label{eq:M_T_M_M}
-	M_T = k_{11} M_M + l
+	M_T = k_{1} M_M + l
 \end{equation}
 
 The coefficients of the linear expression in \cref{eq:M_T_M_M} are independent of the measured radiance, and therefore only need to be calculated once for each system, which can improve efficiency.
