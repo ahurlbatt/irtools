@@ -15,6 +15,9 @@ class DetectorCalibration(object):
 
     H. Budzier, G. Gerlach, "Calibration of Infrared Cameras with Microbolometers",
     https://doi.org/10.5162/irs2015/1.1
+    
+    Note: Although not discussed in the papers, it might be that the response curve resembles Planck's Law as the
+    detector responds only to a certain range of wavelengths, and does not capture the whole blackbody spectrum.
 
     """
 
@@ -34,7 +37,7 @@ class DetectorCalibration(object):
         Returns
         -------
         Radiance: Union[float, np.ndarray]
-            Measured Radiance in [W m^-2 sr^1 um].
+            Measured Radiance in [W m^-2 sr^-1].
 
         """
 
@@ -48,7 +51,7 @@ class DetectorCalibration(object):
         Parameters
         ----------
         radiance : Union[float, np.ndarray]
-            Measured Radiance in [W m^-2 sr^1 um].
+            Measured Radiance in [W m^-2 sr^-1].
 
         Returns
         -------
@@ -79,6 +82,8 @@ class CalibratedRadiance(object):
             (Calibrated) radiance values in W/sr/m^2.
         calibration : DetectorCalibration, optional
             The calibration factors for conversion between the two, for the detector in use.
+            If the detector in use has a different style of calibration, then this can also be given
+            as long as it behaves as a class with the methods "to_radiance" and "to_temperature".
 
         """
 
@@ -96,8 +101,8 @@ class CalibratedRadiance(object):
         if calibration is not None:
             self.calibrate(calibration)
 
-    def calibrate(self, calibration: DetectorCalibration):
         """Apply the given calibration to find the missing temperature or radiance"""
+    def calibrate(self, calibration: DetectorCalibration):
 
         # Store the calibration values
         self.calibration = calibration
@@ -333,6 +338,9 @@ class InfraredObject(object):
     @property
     def modification_matrix(self):
         """Matrix defining the impact on infrared radiation travelling through the object
+        
+        Incoming radiation is affected by reflections and absorption before being transmitted onward.
+        Refer to the document "considering_multiple_infrared_objects.pdf" for a detailed derivation.
 
         Returns
         -------
@@ -356,6 +364,8 @@ class InfraredObject(object):
     @property
     def additional_radiation(self):
         """Radiation that must be added to the forward/backward values on the detector side
+        
+        Refer to the document "considering_multiple_infrared_objects.pdf" for a detailed derivation.
 
         Returns
         -------
